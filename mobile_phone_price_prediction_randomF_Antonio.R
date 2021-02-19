@@ -1,0 +1,94 @@
+#Project Beginnings
+
+#import the necessary packages
+
+library(data.table)
+library(ggplot2)
+library(glmnet)
+library(MLmetrics)
+library(nlme)
+library(mltools)
+library(tidyverse)
+library(scales)
+library(randomForest)
+install.packages('mltools')
+install.packages('tidyverse')
+
+#import the data
+location <- "C:/Users/anton/OneDrive/MSBA/BA810/train.csv"
+setwd("C:/Users/anton/OneDrive/MSBA")
+mobile_data <- fread(location, stringsAsFactors = T)
+
+#set price_range as factor for one hot encoding
+mobile_data$price_range <- as.factor(mobile_data$price_range)
+
+#one hot encode the data for price range
+mobile_data_one = one_hot(mobile_data,cols='price_range')
+
+#split the data into training and test
+mobile_data_one[, test:=0]
+mobile_data_one[sample(nrow(mobile_data_one), 300), test:=1] # take 300 random rows and stick them in the test set
+# now split
+mobile_data_one_test <- mobile_data_one[test==1]
+mobile_data_one_train <- mobile_data_one[test==0]
+
+### Train data for each price level randomForest model, setting target variable as a factor
+mobile_train_0 <- mobile_data_one_train %>% select(-(price_range_1:test))
+mobile_train_0$price_range_0 <- as.factor(mobile_train_0$price_range_0)
+
+mobile_train_1 <- mobile_data_one_train %>% select(-c(price_range_0,(price_range_2:test)))
+mobile_train_1$price_range_1 <- as.factor(mobile_train_1$price_range_1)
+
+mobile_train_2 <- mobile_data_one_train %>% select(-c((price_range_0:price_range_1),(price_range_3:test)))
+mobile_train_2$price_range_2 <- as.factor(mobile_train_2$price_range_2)
+
+mobile_train_3 <- mobile_data_one_train %>% select(-c((price_range_0:price_range_2),test))
+mobile_train_3$price_range_3 <- as.factor(mobile_train_3$price_range_3)
+
+########################################################################
+####Code below did not work for the random Forest model but 
+###could be used for other applications
+
+#cross validation (?)
+
+#separate X (predictors)
+mobile_predictors_train <- mobile_data_one_train %>% select(-(price_range_0:test))
+mobile_predictors_test <- mobile_data_one_test %>% select(-(price_range_0:test))
+
+#instantiate each individual train Ys and obtain the vector of the values
+price_0_train <- mobile_data_one_train %>% select(price_range_0)
+y_0_train <- price_0_train$price_range_0
+
+price_1_train <- mobile_data_one_train %>% select(price_range_1)
+y_1_train <- price_1_train$price_range_1
+
+price_2_train <- mobile_data_one_train %>% select(price_range_2)
+y_2_train <- price_2_train$price_range_2
+
+price_3_train <- mobile_data_one_train %>% select(price_range_3)
+y_3_train <- price_3_train$price_range_3
+
+#instantiate test Ys
+price_0_test <- mobile_data_one_test %>% select(price_range_0)
+price_1_test <- mobile_data_one_test %>% select(price_range_1)
+price_2_test <- mobile_data_one_test %>% select(price_range_2)
+price_3_test <- mobile_data_one_test %>% select(price_range_3)
+##########################################################################
+#fit the models for each price level
+#Random Forest Classifier for price range 0
+fit.rndfor_0 <- randomForest(price_range_0 ~.,
+                           data = mobile_train_0,
+                           importance=TRUE)
+#Random Forest Classifier for price range 0
+fit.rndfor_1 <- randomForest(price_range_1 ~.,
+                             data = mobile_train_1,
+                             importance=TRUE)
+#Random Forest Classifier for price range 0
+fit.rndfor_2 <- randomForest(price_range_2 ~.,
+                             data = mobile_train_2,
+                             importance=TRUE)
+#Random Forest Classifier for price range 0
+fit.rndfor_3 <- randomForest(price_range_3 ~.,
+                             data = mobile_train_3,
+                             importance=TRUE)
+
