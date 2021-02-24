@@ -45,6 +45,21 @@ mobile_train_2$price_range_2 <- as.factor(mobile_train_2$price_range_2)
 mobile_train_3 <- mobile_data_one_train %>% select(-c((price_range_0:price_range_2),test))
 mobile_train_3$price_range_3 <- as.factor(mobile_train_3$price_range_3)
 
+###Test data 
+mobile_predictors_test <- mobile_data_one_test %>% select(-(price_range_0:test))
+#instantiate test Ys
+price_0_test <- mobile_data_one_test %>% select(price_range_0)
+price_0_test_f <- as.factor(price_0_test$price_range_0)
+
+price_1_test <- mobile_data_one_test %>% select(price_range_1)
+price_1_test_f <- as.factor(price_1_test$price_range_1)
+
+price_2_test <- mobile_data_one_test %>% select(price_range_2)
+price_2_test_f <- as.factor(price_2_test$price_range_2)
+
+price_3_test <- mobile_data_one_test %>% select(price_range_3)
+price_3_test_f <- as.factor(price_3_test$price_range_3)
+
 ########################################################################
 ####Code below did not work for the random Forest model but 
 ###could be used for other applications
@@ -53,7 +68,6 @@ mobile_train_3$price_range_3 <- as.factor(mobile_train_3$price_range_3)
 
 #separate X (predictors)
 mobile_predictors_train <- mobile_data_one_train %>% select(-(price_range_0:test))
-mobile_predictors_test <- mobile_data_one_test %>% select(-(price_range_0:test))
 
 #instantiate each individual train Ys and obtain the vector of the values
 price_0_train <- mobile_data_one_train %>% select(price_range_0)
@@ -68,27 +82,62 @@ y_2_train <- price_2_train$price_range_2
 price_3_train <- mobile_data_one_train %>% select(price_range_3)
 y_3_train <- price_3_train$price_range_3
 
-#instantiate test Ys
-price_0_test <- mobile_data_one_test %>% select(price_range_0)
-price_1_test <- mobile_data_one_test %>% select(price_range_1)
-price_2_test <- mobile_data_one_test %>% select(price_range_2)
-price_3_test <- mobile_data_one_test %>% select(price_range_3)
+
 ##########################################################################
 #fit the models for each price level
 #Random Forest Classifier for price range 0
 fit.rndfor_0 <- randomForest(price_range_0 ~.,
                            data = mobile_train_0,
-                           importance=TRUE)
-#Random Forest Classifier for price range 0
+                           importance = TRUE,
+                           xtest = mobile_predictors_test,
+                           ytest = price_0_test_f)
+#Random Forest Classifier for price range 1
 fit.rndfor_1 <- randomForest(price_range_1 ~.,
                              data = mobile_train_1,
-                             importance=TRUE)
-#Random Forest Classifier for price range 0
+                             importance=TRUE,
+                             xtest = mobile_predictors_test,
+                             ytest = price_1_test_f)
+#Random Forest Classifier for price range 2
 fit.rndfor_2 <- randomForest(price_range_2 ~.,
                              data = mobile_train_2,
-                             importance=TRUE)
-#Random Forest Classifier for price range 0
+                             importance=TRUE,
+                             xtest = mobile_predictors_test,
+                             ytest = price_2_test_f)
+#Random Forest Classifier for price range 3
 fit.rndfor_3 <- randomForest(price_range_3 ~.,
                              data = mobile_train_3,
-                             importance=TRUE)
+                             importance=TRUE,
+                             xtest = mobile_predictors_test,
+                             ytest = price_3_test_f)
+
+#Analyze the results
+# Price Range 0 train
+y_hat_0 <- fit.rndfor_0$predicted
+price_0_acc <- Accuracy(y_hat_0,y_0_train)
+# Price Range 0 test
+y_test_hat_0 <- fit.rndfor_0$test$predicted
+price_0_acc_test <- Accuracy(price_0_test$price_range_0,y_test_hat_0)
+
+#Price Range 1 train
+y_hat_1 <- fit.rndfor_1$predicted
+price_1_acc <- Accuracy(y_hat_1,y_1_train)
+# Price Range 1 test
+y_test_hat_1 <- fit.rndfor_1$test$predicted
+price_1_acc_test <- Accuracy(price_1_test$price_range_1,y_test_hat_1)
+
+#Price Range 2 train
+y_hat_2 <- fit.rndfor_2$predicted
+price_2_acc <- Accuracy(y_hat_2,y_2_train)
+# Price Range 2 test
+y_test_hat_2 <- fit.rndfor_2$test$predicted
+price_2_acc_test <- Accuracy(price_2_test$price_range_2,y_test_hat_2)
+
+#Price Range 3 train
+y_hat_3 <- fit.rndfor_3$predicted
+price_3_acc <- Accuracy(y_hat_3,y_3_train)
+# Price Range 3 test
+y_test_hat_3 <- fit.rndfor_3$test$predicted
+price_3_acc_test <- Accuracy(price_3_test$price_range_3,y_test_hat_3)
+
+#Building a model for a prediction with all models
 
