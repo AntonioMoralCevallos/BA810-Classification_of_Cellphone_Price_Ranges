@@ -116,28 +116,60 @@ y_hat_0 <- fit.rndfor_0$predicted
 price_0_acc <- Accuracy(y_hat_0,y_0_train)
 # Price Range 0 test
 y_test_hat_0 <- fit.rndfor_0$test$predicted
-price_0_acc_test <- Accuracy(price_0_test$price_range_0,y_test_hat_0)
+price_0_acc_test <- Accuracy(y_test_hat_0,price_0_test$price_range_0)
 
 #Price Range 1 train
 y_hat_1 <- fit.rndfor_1$predicted
 price_1_acc <- Accuracy(y_hat_1,y_1_train)
 # Price Range 1 test
 y_test_hat_1 <- fit.rndfor_1$test$predicted
-price_1_acc_test <- Accuracy(price_1_test$price_range_1,y_test_hat_1)
+price_1_acc_test <- Accuracy(y_test_hat_1,price_1_test$price_range_1)
 
 #Price Range 2 train
 y_hat_2 <- fit.rndfor_2$predicted
 price_2_acc <- Accuracy(y_hat_2,y_2_train)
 # Price Range 2 test
 y_test_hat_2 <- fit.rndfor_2$test$predicted
-price_2_acc_test <- Accuracy(price_2_test$price_range_2,y_test_hat_2)
+price_2_acc_test <- Accuracy(y_test_hat_2,price_2_test$price_range_2)
 
 #Price Range 3 train
 y_hat_3 <- fit.rndfor_3$predicted
 price_3_acc <- Accuracy(y_hat_3,y_3_train)
 # Price Range 3 test
 y_test_hat_3 <- fit.rndfor_3$test$predicted
-price_3_acc_test <- Accuracy(price_3_test$price_range_3,y_test_hat_3)
+price_3_acc_test <- Accuracy(y_test_hat_3,price_3_test$price_range_3)
+
+################################################################################################
+#Code below has the purpose of combining all 4 previous models
+#However, I have not yet being able to figure out the bugs and thus it is still not usable.
 
 #Building a model for a prediction with all models
 
+#Add these values into a data table
+prediction_dt <- data.table("0" = fit.rndfor_0$test$votes,
+                            "1" = fit.rndfor_1$test$votes,
+                            "2" = fit.rndfor_2$test$votes,
+                            "3" = fit.rndfor_3$test$votes )
+# Try if statement to say choose max value from 0.1,1.1,2.1,3.1 ###################################
+decision_dt <- data.table(colnames(prediction_dt)[max.col(prediction_dt)])
+
+decision_dt$actualv <- mobile_data_one_test$price_level
+
+#set up y_test as a 4 level factor
+price_levels <- mobile_data_one_test %>% select((price_range_0:price_range_3))
+colnames(price_levels) <- c("0","1","2","3")
+w <- which(price_levels==1,arr.ind = T)
+mobile_data_one_test$price_level <- toupper(names(price_levels)[w[order(w[,1]),2]])
+
+#Evaluate decisions
+y_test <- as.numeric(mobile_data_one_test$price_level)
+predictions <- as.numeric(decision_dt$V1)
+analysis_table <- table(y_test,decision_dt$V1)
+
+diag = diag(analysis_table) # number of correctly classified instances per class 
+rowsums = apply(analysis_table, 1, sum) # number of instances per class
+colsums = apply(analysis_table, 2, sum) # number of predictions per class
+
+precision = diag / colsums 
+recall = diag / rowsums 
+f1 = 2 * precision * recall / (precision + recall)
