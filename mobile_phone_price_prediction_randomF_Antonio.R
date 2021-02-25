@@ -141,19 +141,19 @@ price_3_acc_test <- Accuracy(y_test_hat_3,price_3_test$price_range_3)
 
 ################################################################################################
 #Code below has the purpose of combining all 4 previous models
-#However, I have not yet being able to figure out the bugs and thus it is still not usable.
 
 #Building a model for a prediction with all models
 
 #Add these values into a data table
-prediction_dt <- data.table("0" = fit.rndfor_0$test$votes,
-                            "1" = fit.rndfor_1$test$votes,
-                            "2" = fit.rndfor_2$test$votes,
-                            "3" = fit.rndfor_3$test$votes )
-# Try if statement to say choose max value from 0.1,1.1,2.1,3.1 ###################################
-decision_dt <- data.table(colnames(prediction_dt)[max.col(prediction_dt)])
+prediction_dt <- data.table("0" = fit.rndfor_0$test$votes[,2],
+                            "1" = fit.rndfor_1$test$votes[,2],
+                            "2" = fit.rndfor_2$test$votes[,2],
+                            "3" = fit.rndfor_3$test$votes[,2])
 
-decision_dt$actualv <- mobile_data_one_test$price_level
+label_rf <- apply(prediction_dt,1,which.max)-1
+decision_dt <- data.table("predicted values"= label_rf)
+
+decision_dt$actualvalues <- mobile_data_one_test$price_level
 
 #set up y_test as a 4 level factor
 price_levels <- mobile_data_one_test %>% select((price_range_0:price_range_3))
@@ -162,9 +162,9 @@ w <- which(price_levels==1,arr.ind = T)
 mobile_data_one_test$price_level <- toupper(names(price_levels)[w[order(w[,1]),2]])
 
 #Evaluate decisions
-y_test <- as.numeric(mobile_data_one_test$price_level)
-predictions <- as.numeric(decision_dt$V1)
-analysis_table <- table(y_test,decision_dt$V1)
+y_test <- as.numeric(decision_dt$actualvalues)
+predictions <- as.numeric(decision_dt$`predicted values`)
+analysis_table <- table(y_test,predictions)
 
 diag = diag(analysis_table) # number of correctly classified instances per class 
 rowsums = apply(analysis_table, 1, sum) # number of instances per class
