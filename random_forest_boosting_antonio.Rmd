@@ -23,7 +23,7 @@ library(tidyverse)
 library(scales)
 library(randomForest)
 library(gbm)
-
+library(ggthemes)
 #import the data
 location <- "C:/Users/anton/OneDrive/MSBA/BA810/train.csv"
 setwd("C:/Users/anton/OneDrive/MSBA")
@@ -183,6 +183,17 @@ precision = diag / colsums
 recall = diag / rowsums 
 f1 = 2 * precision * recall / (precision + recall)
 
+#graphing the results
+df_rf <- data.table(rowsums)
+df_rf$pred <- colsums
+df_rf$price_range <- c("0",'1','2','3')
+colnames(df_rf) <- c('actual','predicted','price_range')
+ggplot(NULL,aes(x=price_range,y=actual))+
+  geom_bar(aes(fill="actual"), data= df_rf, stat = 'identity',position = "dodge",alpha=0.3)+
+  geom_bar(aes(y=predicted,fill="predicted"),data=df_rf,stat = 'identity',position = "dodge",alpha = 0.3)+
+  ylab("Count of Occurrence")+
+  theme_tufte()
+
 ```
 
 
@@ -267,5 +278,15 @@ precision_boost = diag_boost / colsums_boost
 recall_boost = diag_boost / rowsums_boost 
 f1_boost = 2 * precision_boost * recall_boost / (precision_boost + recall_boost)
 
+#graphing the predictions
+df <- data.table(rowsums_boost)
+df$pred <- colsums_boost
+df$price_range <- c("0",'1','2','3')
+colnames(df) <- c('actual','predicted','price_range')
+ggplot(NULL,aes(x=price_range,y=actual))+
+  geom_bar(aes(fill="actual"), data= df, stat = 'identity',position = "dodge",alpha=0.3)+
+  geom_bar(aes(y=predicted,fill="predicted"),data=df,stat = 'identity',position = "dodge",alpha = 0.3)+
+  ylab("Count of Occurrence")+
+  theme_tufte()
 ```
 

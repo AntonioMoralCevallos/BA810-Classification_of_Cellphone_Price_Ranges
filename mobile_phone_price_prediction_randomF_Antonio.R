@@ -252,3 +252,24 @@ colsums_boost = apply(analysis_table_boost, 2, sum) # number of predictions per 
 precision_boost = diag_boost / colsums_boost 
 recall_boost = diag_boost / rowsums_boost 
 f1_boost = 2 * precision_boost * recall_boost / (precision_boost + recall_boost)
+
+df <- data.table(rowsums_boost)
+df$pred <- colsums_boost
+df$price_range <- c("0",'1','2','3')
+colnames(df) <- c('actual','predicted')
+ggplot(NULL,aes(x=price_range,y=actual))+
+  geom_bar(aes(fill="actual"), data= df, stat = 'identity',position = "dodge",alpha=0.3)+
+  geom_bar(aes(y=predicted,fill="predicted"),data=df,stat = 'identity',position = "dodge",alpha = 0.3)+
+  ylab("Count of Occurrence")+
+  theme_tufte()
+library(ggthemes)
+  
+df_rf <- data.table(rowsums)
+df_rf$pred <- colsums
+df_rf$price_range <- c("0",'1','2','3')
+colnames(df_rf) <- c('actual','predicted','price_range')
+ggplot(NULL,aes(x=price_range,y=actual))+
+  geom_bar(aes(fill="actual"), data= df_rf, stat = 'identity',position = "dodge",alpha=0.3)+
+  geom_bar(aes(y=predicted,fill="predicted"),data=df_rf,stat = 'identity',position = "dodge",alpha = 0.3)+
+  ylab("Count of Occurrence")+
+  theme_tufte()
