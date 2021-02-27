@@ -11,14 +11,12 @@ library(mltools)
 library(tidyverse)
 library(scales)
 library(randomForest)
-install.packages('mltools')
-install.packages('tidyverse')
 
 #import the data
 location <- "C:/Users/anton/OneDrive/MSBA/BA810/train.csv"
 setwd("C:/Users/anton/OneDrive/MSBA")
 mobile_data <- fread(location, stringsAsFactors = T)
-
+set.seed(810)
 #set price_range as factor for one hot encoding
 mobile_data$price_range <- as.factor(mobile_data$price_range)
 
@@ -173,3 +171,84 @@ colsums = apply(analysis_table, 2, sum) # number of predictions per class
 precision = diag / colsums 
 recall = diag / rowsums 
 f1 = 2 * precision * recall / (precision + recall)
+
+
+###############################################################
+#Boosting
+library(gbm)
+
+#gbm needs the target variable to be numeric
+#transforming price range to numeric
+mobile_train_0b <- mobile_data_one_train %>% select(-(price_range_1:test))
+
+mobile_train_1b <- mobile_data_one_train %>% select(-c(price_range_0,(price_range_2:test)))
+
+mobile_train_2b <- mobile_data_one_train %>% select(-c((price_range_0:price_range_1),(price_range_3:test)))
+
+mobile_train_3b <- mobile_data_one_train %>% select(-c((price_range_0:price_range_2),test))
+
+#fit the models for each price level
+#Boosted Classifier for price range 0
+fit.boostrndfor_0 <- gbm(price_range_0 ~.,
+                         data = mobile_train_0b,
+                         distribution = "bernoulli",
+                         shrinkage = 0.1)
+#Boosted Classifier for price range 1
+fit.boostrndfor_1 <- gbm(price_range_1 ~.,
+                         data = mobile_train_1b,
+                         distribution =  "bernoulli",
+                         shrinkage = 0.1)
+#Boosted Classifier for price range 2
+fit.boostrndfor_2 <- gbm(price_range_2 ~.,
+                         data = mobile_train_2b,
+                         distribution =  "bernoulli",
+                         shrinkage = 0.1)
+#Boosted Classifier for price range 3
+fit.boostrndfor_3 <- gbm(price_range_3 ~.,
+                         data = mobile_train_3b,
+                         distribution =  "bernoulli",
+                         shrinkage = 0.1)
+
+#Predictions
+#price range 0
+y_boosted_pred_0 <- predict.gbm(fit.boostrndfor_0,mobile_predictors_test,type = 'response')
+boosted.class_0 <- ifelse(y_boosted_pred_0<0.5,'0','1')
+boosted_0_acc <- Accuracy(boosted.class_0,price_0_test$price_range_0)
+#price range 1
+y_boosted_pred_1 <- predict.gbm(fit.boostrndfor_1,mobile_predictors_test,type = 'response')
+boosted.class_1 <- ifelse(y_boosted_pred_1<0.5,'0','1')
+boosted_1_acc <- Accuracy(boosted.class_1,price_1_test$price_range_1)
+#price range 2
+y_boosted_pred_2 <- predict.gbm(fit.boostrndfor_2,mobile_predictors_test,type = 'response')
+boosted.class_2 <- ifelse(y_boosted_pred_2<0.5,'0','1')
+boosted_2_acc <- Accuracy(boosted.class_2,price_2_test$price_range_2)
+#price range 3
+y_boosted_pred_3 <- predict.gbm(fit.boostrndfor_3,mobile_predictors_test,type = 'response')
+boosted.class_3 <- ifelse(y_boosted_pred_3<0.5,'0','1')
+boosted_3_acc <- Accuracy(boosted.class_3,price_3_test$price_range_3)
+
+#Evaluating
+#Building a model for a prediction with all models
+
+#Add these values into a data table
+boost_prediction_dt <- data.table("0" =y_boosted_pred_0,
+                            "1" = y_boosted_pred_1,
+                            "2" = y_boosted_pred_2,
+                            "3" = y_boosted_pred_3)
+
+label_boost <- apply(boost_prediction_dt,1,which.max)-1
+boost_decision_dt <- data.table("predicted values"= label_boost)
+
+boost_decision_dt$actualvalues <- mobile_data_one_test$price_level
+
+#Evaluate decisions
+predictions_boost <- boost_decision_dt$`predicted values`
+analysis_table_boost <- table(y_test,predictions_boost)
+
+diag_boost = diag(analysis_table_boost) # number of correctly classified instances per class 
+rowsums_boost = apply(analysis_table_boost, 1, sum) # number of instances per class
+colsums_boost = apply(analysis_table_boost, 2, sum) # number of predictions per class
+
+precision_boost = diag_boost / colsums_boost 
+recall_boost = diag_boost / rowsums_boost 
+f1_boost = 2 * precision_boost * recall_boost / (precision_boost + recall_boost)
