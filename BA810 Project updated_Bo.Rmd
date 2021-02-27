@@ -105,15 +105,3 @@ barplot(rFM$importance[,2], main = "Feature Importance Barplot")
 ```{r}
 varImpPlot(x = rFM, sort = TRUE, n.var = nrow(rFM$importance), main = "Feature Importance ScatterPlot")
 ```
-
-# boosting
-install.packages("adabag")
-
-library(adabag)
-
-set.seed(810)
-
-BoostM <- boosting(price_range ~., data=dd_train, boos=TRUE, mfinal=25, coeflearn="Breiman", rpart.control(minsplit = 1))
-
-
-
