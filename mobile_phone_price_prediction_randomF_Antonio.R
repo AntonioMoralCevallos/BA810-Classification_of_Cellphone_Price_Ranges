@@ -141,7 +141,11 @@ price_3_acc_test <- Accuracy(y_test_hat_3,price_3_test$price_range_3)
 #Code below has the purpose of combining all 4 previous models
 
 #Building a model for a prediction with all models
-
+#set up y_test as a 4 level factor
+price_levels <- mobile_data_one_test %>% select((price_range_0:price_range_3))
+colnames(price_levels) <- c("0","1","2","3")
+w <- which(price_levels==1,arr.ind = T)
+mobile_data_one_test$price_level <- toupper(names(price_levels)[w[order(w[,1]),2]])
 #Add these values into a data table
 prediction_dt <- data.table("0" = fit.rndfor_0$test$votes[,2],
                             "1" = fit.rndfor_1$test$votes[,2],
@@ -153,11 +157,7 @@ decision_dt <- data.table("predicted values"= label_rf)
 
 decision_dt$actualvalues <- mobile_data_one_test$price_level
 
-#set up y_test as a 4 level factor
-price_levels <- mobile_data_one_test %>% select((price_range_0:price_range_3))
-colnames(price_levels) <- c("0","1","2","3")
-w <- which(price_levels==1,arr.ind = T)
-mobile_data_one_test$price_level <- toupper(names(price_levels)[w[order(w[,1]),2]])
+
 
 #Evaluate decisions
 y_test <- as.numeric(decision_dt$actualvalues)
