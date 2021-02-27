@@ -1,0 +1,150 @@
+---
+title: "810 Team Project"
+author: "Bo Li U24425931"
+date: "2/24/2021"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+install.packages(c("data.table", "ggplot2", "ggthemes", "scales", "rpart","randomForest","glmnet","gbm"))
+
+install.packages("xgboost")
+install.packages("rpart.plot")
+install.packages("ipred")
+install.packages("caret")
+install.packages("e1071")
+install.packages("lattice")
+install.packages("caTools")
+
+library(data.table)
+library(ggplot2)
+library(ggthemes)
+library(glmnet)
+theme_set(theme_bw())
+library(MASS)
+library(rpart)
+library(rpart.plot)
+library(ipred)
+library(randomForest)
+library(caret)
+library(e1071)
+library(caTools)
+
+data <- fread("C:/Users/boli0/Downloads/train.csv")
+str(data)
+
+set.seed(810)
+split = sample.split(data$price_range, SplitRatio = 0.7)
+data_train = subset(data, split == TRUE)
+data_test = subset(data, split == FALSE)
+
+# 1-1. Build linear regression model
+linreg = lm(price_range ~., data = data_train)
+
+summary(linreg)
+
+# 1-2. linear regression sse is 63.55421
+linreg.pred = predict(linreg, newdata = data_test)
+linreg.sse = sum((linreg.pred - data_test$price_range)^2)
+
+linreg.sse
+
+```{r}
+# 2-1. Build single decision tree classification
+
+tree = rpart(price_range ~ .,method = "class", data = data_train,control = rpart.control(minsplit = 1) , parms = list(split = "information"))
+
+prp(tree)
+```
+```{r}
+print(tree)
+```
+```{r}
+summary(tree)
+```
+# 2-2. Single decision tree classification sse is 7021.066
+```{r}
+tree.pred = predict(tree, newdata = data_test)
+
+tree.sse = sum ((tree.pred - data_test$price_range)^2)
+
+tree.sse
+```
+```{r}
+# 2-3. Build decision tree while cp = 0.01000000
+# E1 is 0.1907143.
+```
+```{r}
+tree2 <- prune(tree, cp = 0.01000000)
+rpart.plot(fit2, type = 4, branch = 0, extra = 2)
+```
+```{r}
+Ctree1 <- predict(tree2, dd_train, type = "class")
+ConfM1 <- table(dd_train$price_range, CFit1)
+(E1 <- (sum(ConfM1) - sum(diag(ConfM1)))/sum(ConfM1))
+```
+```{r}
+# 2-4. Utiltize bagging from ipred package to build combined decision tree 1
+# Bagging classification trees with 25 bootstrap replications, E2 is 0.75.
+BagM1 <- bagging(price_range ~., data = data_train, nbagg = 25, coob = TRUE, control = rpart.control(minsplit = 1))
+
+CFit2 <- predict(BagM1, data_train, type = "class")
+
+ConfM2 <- table(data_train$price_range, CFit2)
+
+(E2 <- (sum(ConfM2) - sum(diag(ConfM2)))/sum(ConfM2))
+```
+```{r}
+# 3-1. Random forest
+# E3 is 0.9992.
+rFM <- randomForest(price_range ~., data = data_train, importance = TRUE, proximity = TRUE)
+
+print(rFM)
+```
+```{r}
+summary(rFM)
+```
+```{r}
+plot(rFM)
+```
+```{r}
+Fit <- predict(rFM, data_train)
+
+ConfM3 <- table(dd_train$price_range, Fit)
+
+(E3 <- (sum(ConfM3) - sum(diag(ConfM3)))/sum(ConfM3))
+```
+# 3-2. Reverse Random Forest and Confusion Matrix
+data_train$Reverse = as.factor(data_train$Reverse)
+data_test$Reverse = as.factor(data_test$Reverse)
+
+PredictFM = predict(rFM, newdata = data_test)
+table(data_test$Reverse, PredictFM)
+```{r}
+# 3-2. Random Forest Feature Importance Barplot
+barplot(rFM$importance[,2], main = "Feature Importance Barplot")
+```
+```{r}
+# 3-3. Random Forest Feature Importance ScatterPlot
+varImpPlot(x = rFM, sort = TRUE, n.var = nrow(rFM$importance), main = "Feature Importance ScatterPlot")
+```
+```{r}
+# 4-1. regression trees cross-validation
+tr.control = trainControl(method = "cv", number = 10)
+cp.grid = expand.grid(.cp = (0:10)*0.001)
+tr = train(price_range ~., data = data_train, method = "rpart", trControl = tr.control, tuneGrid = cp.grid)
+tr
+```
+```{r}
+# 4-2. plot best tree
+best.tree = tr$finalModel
+prp(best.tree)
+```
+```{r}
+# 4-3. best tree sse is 80.34064
+best.tree.pred = predict(best.tree, newdata = dd_test)
+best.tree.sse = sum((best.tree.pred - dd_test$price_range)^2)
+best.tree.sse
+```
