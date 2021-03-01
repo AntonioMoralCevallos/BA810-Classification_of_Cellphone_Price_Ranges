@@ -31,6 +31,9 @@ mobile_data <- fread(location, stringsAsFactors = T)
 set.seed(810)
 
 ```
+We decided to apply random forest models with each individual price range, as this would make results more interpretable. This model proved to be good, as accuracy for values in the test set was 0.83. As seen with our other methods as well, the model had the most trouble differentiating between phones in the middle price ranges of 1-2.We later created a random forest model with an increased accuracy of 0.88. This was achieved by using cross validation for hyperparameter tuning.
+However, as these tree based models performed worse than our linear models, we were led to believe that our data followed a more linear relationship. 
+
 ## Preparing the data for modeling
 ```{r}
 #set price_range as factor for one hot encoding
