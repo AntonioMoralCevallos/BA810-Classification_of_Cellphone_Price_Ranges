@@ -197,6 +197,12 @@ ggplot(NULL,aes(x=price_range,y=actual))+
   ylab("Count of Occurrence")+
   theme_tufte()
 
+
+
+ggplot(data = decision_dt,aes(x=`predicted values`,y=actualvalues,palette(n=4,'Alphabet')))+
+  geom_point(aes(jitter(decision_dt$`predicted values`,factor=1,)))+
+  theme_bw()
+
 ```
 
 

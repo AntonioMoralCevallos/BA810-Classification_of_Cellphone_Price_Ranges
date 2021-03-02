@@ -16,7 +16,7 @@ library(randomForest)
 location <- "C:/Users/anton/OneDrive/MSBA/BA810/train.csv"
 setwd("C:/Users/anton/OneDrive/MSBA")
 mobile_data <- fread(location, stringsAsFactors = T)
-set.seed(810)
+set.seed(430)
 #set price_range as factor for one hot encoding
 mobile_data$price_range <- as.factor(mobile_data$price_range)
 
@@ -172,6 +172,13 @@ precision = diag / colsums
 recall = diag / rowsums 
 f1 = 2 * precision * recall / (precision + recall)
 
+df_rf <- data.table(rowsums)
+df_rf$pred <- colsums
+df_rf$price_range <- c("0",'1','2','3')
+colnames(df_rf) <- c('actual','predicted','price_range')
+ggplot(data = decision_dt,aes(x=`predicted values`,y=actualvalues,palette(n=4,'Alphabet')))+
+  geom_point(aes(jitter(decision_dt$`predicted values`,factor=1,)))+
+  theme_bw()
 
 ###############################################################
 #Boosting
